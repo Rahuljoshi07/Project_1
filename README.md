@@ -53,9 +53,7 @@ curl http://localhost/health
 | Prometheus | http://localhost:9090 | none |
 | Grafana | http://localhost:3000 | `admin` / `admin` |
 
-> 📸 **Screenshot:- `docker compose ps` showing all containers running and healthy**
->
-> ![docker compose ps](docs/images/docker-ps.png)
+<img width="1598" height="887" alt="image" src="https://github.com/user-attachments/assets/abecfbad-ad96-4800-9eb3-f5baab70e29e" />
 
 ---
 
