@@ -75,7 +75,9 @@ http_requests_total{handler="/health",method="GET",status="2xx"} 42.0
 >
 <img width="1872" height="909" alt="image" src="https://github.com/user-attachments/assets/595e5083-c361-4cfb-a660-ff6b20cd0fc7" />
 
+
 <img width="1883" height="1957" alt="image" src="https://github.com/user-attachments/assets/39f22247-179a-485a-a1a2-6499916c2209" />
+
 
 
 
