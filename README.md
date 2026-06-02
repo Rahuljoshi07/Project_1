@@ -73,11 +73,10 @@ http_requests_total{handler="/health",method="GET",status="2xx"} 42.0
 
 > 📸 **Screenshot:- Grafana dashboard at `localhost:3000` with Prometheus datasource connected**
 >
-> ![Grafana dashboard](docs/images/grafana-dashboard.png)
+<img width="1872" height="909" alt="image" src="https://github.com/user-attachments/assets/595e5083-c361-4cfb-a660-ff6b20cd0fc7" />
 
-> 📸 **Screenshot:- Prometheus targets page at `localhost:9090/targets` showing FastAPI being scraped**
->
-> ![Prometheus targets](docs/images/prometheus-targets.png)
+<img width="1872" height="1940" alt="image" src="https://github.com/user-attachments/assets/6227f449-db9f-4934-b4d1-9a21e61507f5" />
+
 
 ---
 
