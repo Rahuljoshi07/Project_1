@@ -134,9 +134,8 @@ What it does:-
 - Explicitly blocks external access to Prometheus and Grafana ports
 - Keeps outgoing traffic open for pulling images, updates, etc.
 
-> 📸 **Screenshot:- Output of `ufw status verbose` showing active firewall rules**
->
-> ![Firewall status](docs/images/firewall-status.png)
+<img width="948" height="388" alt="image" src="https://github.com/user-attachments/assets/bef8abfc-98ab-426e-8279-47a19dc31372" />
+
 
 #### Fail2ban
 
