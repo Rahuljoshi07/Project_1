@@ -8,376 +8,282 @@
   <img src="https://img.shields.io/badge/Grafana-11.2-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana" />
 </p>
 
-<h1 align="center">🚀 FastAPI Production Stack</h1>
+# FastAPI Production Stack
 
-<p align="center">
-  <strong>A production-ready, security-hardened FastAPI boilerplate with zero-downtime deployments,<br/>
-  full observability, and automated infrastructure — ready to ship from day one.</strong>
-</p>
-
-<p align="center">
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-features">Features</a> •
-  <a href="#-project-structure">Project Structure</a> •
-  <a href="#-deployment">Deployment</a> •
-  <a href="#-documentation">Documentation</a>
-</p>
+I put together a minimal but production-ready FastAPI setup with everything I'd actually want on a real deployment:- Postgres, Redis, NGINX reverse proxy, monitoring, automated backups, security hardening, and zero-downtime deploys. The idea was to have a clean starting point that doesn't cut corners.
 
 ---
 
-## 🎯 What Is This?
-
-This project is a **complete, deployable FastAPI application stack** — not just a demo. It includes everything you need to go from local development to production on a Linux VPS:
-
-| What You Get | Why It Matters |
-|:---|:---|
-| 🐍 **FastAPI** app with health checks | Production-grade API with built-in monitoring |
-| 🐘 **PostgreSQL 16** database | Reliable, battle-tested relational storage |
-| 🔴 **Redis 7** cache | Fast in-memory caching and session store |
-| 🔒 **NGINX** reverse proxy with TLS | Secure entry point with HTTPS & security headers |
-| 📊 **Prometheus + Grafana** monitoring | Real-time metrics, dashboards & alerting |
-| ⚡ **Blue-Green zero-downtime deploys** | Ship updates without dropping a single request |
-| 🛡️ **Firewall + Fail2ban** scripts | Host-level security hardening out of the box |
-| ☁️ **Cloudflare** real-IP integration | Accurate client IP logging behind Cloudflare proxy |
-| 💾 **Automated nightly backups** | Scheduled PostgreSQL dumps with 7-day retention |
-| 🔄 **GitHub Actions CI/CD** | Push to `main` → auto-deploy to your server |
-
----
-
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart LR
-    subgraph Internet
-        Client([🌐 Client])
-        CF[☁️ Cloudflare]
-    end
-
-    subgraph Server ["🖥️ Linux VPS / Docker Host"]
-        subgraph proxy ["Reverse Proxy"]
-            Nginx[🔒 NGINX<br/>Port 80 / 443]
-        end
-
-        subgraph app ["Application Layer (Blue-Green)"]
-            Blue[🔵 App Blue<br/>Port 8000]
-            Green[🟢 App Green<br/>Port 8000]
-        end
-
-        subgraph data ["Data Layer"]
-            PG[(🐘 PostgreSQL<br/>Port 5432)]
-            RD[(🔴 Redis<br/>Port 6379)]
-        end
-
-        subgraph observe ["Observability"]
-            Prom[📊 Prometheus<br/>Port 9090]
-            Graf[📈 Grafana<br/>Port 3000]
-        end
-    end
-
-    Client --> CF --> Nginx
-    Nginx -->|Active| Blue
-    Nginx -.->|Standby| Green
-    Blue & Green --> PG
-    Blue & Green --> RD
-    Prom -->|Scrape /metrics| Blue & Green
-    Graf --> Prom
+  client[Client] -->|HTTPS| nginx[NGINX]
+  nginx --> app[FastAPI]
+  app --> db[(PostgreSQL)]
+  app --> redis[(Redis)]
+  prometheus[Prometheus] -.->|/metrics| app
+  grafana[Grafana] --> prometheus
 ```
-
-### How It Works
-
-1. **Client** sends a request → hits **Cloudflare** (optional CDN/proxy)
-2. **NGINX** terminates TLS, adds security headers, restores real client IP
-3. Request is routed to the **active application slot** (Blue or Green)
-4. **FastAPI** processes the request, using **PostgreSQL** for data and **Redis** for caching
-5. **Prometheus** scrapes `/metrics` every 15 seconds → **Grafana** visualizes everything
 
 ---
 
-## ⚡ Quick Start
-
-Get the entire stack running locally in **under 60 seconds**:
-
-### Step 1 — Clone & Configure
+## Quick Start
 
 ```bash
 git clone https://github.com/Rahuljoshi07/Project_1.git
 cd Project_1
 cp .env.example .env
-```
-
-### Step 2 — Launch Everything
-
-```bash
 docker compose up -d --build
 ```
 
-### Step 3 — Verify
+Then hit these to make sure everything's working:-
 
 ```bash
-# Check API root
 curl http://localhost/
-# → {"message": "Hello from FastAPI"}
+# {"message": "Hello from FastAPI"}
 
-# Check full health (Postgres + Redis connectivity)
 curl http://localhost/health
-# → {"ok": true, "postgres": {"ok": true}, "redis": {"ok": true}}
-
-# Check Prometheus metrics
-curl http://localhost/metrics
-# → http_requests_total{handler="/health",method="GET",status="2xx"} 1.0
+# {"ok": true, "postgres": {"ok": true}, "redis": {"ok": true}}
 ```
-
-### Step 4 — Open Dashboards
 
 | Service | URL | Credentials |
 |:---|:---|:---|
-| 🐍 FastAPI (via NGINX) | [http://localhost/](http://localhost/) | — |
-| ❤️ Health Check | [http://localhost/health](http://localhost/health) | — |
-| 📊 Prometheus | [http://localhost:9090/](http://localhost:9090/) | — |
-| 📈 Grafana | [http://localhost:3000/](http://localhost:3000/) | `admin` / `admin` |
+| FastAPI (via NGINX) | http://localhost/ | none |
+| Health Check | http://localhost/health | none |
+| Prometheus metrics | http://localhost/metrics | none |
+| Prometheus UI | http://localhost:9090 | none |
+| Grafana | http://localhost:3000 | `admin` / `admin` |
 
 ---
 
-## ✨ Features
+## What's Included
 
-### 📈 Monitoring (Prometheus + Grafana)
+### Monitoring (Prometheus + Grafana)
 
-The FastAPI application is instrumented with [`prometheus-fastapi-instrumentator`](https://github.com/trallnag/prometheus-fastapi-instrumentator) to automatically track:
-
-- **Request count** — by method, handler, and status code
-- **Request duration** — latency histograms
-- **In-progress requests** — concurrent request tracking
-- **Response sizes** — payload size distribution
+I added [`prometheus-fastapi-instrumentator`](https://github.com/trallnag/prometheus-fastapi-instrumentator) to the app so it automatically exposes metrics at `/metrics`:- request counts, latency histograms, in-progress requests, response sizes. Prometheus scrapes it every 15s and Grafana comes pre-wired with Prometheus as the default datasource, so you don't need to configure anything after boot.
 
 ```
-# HELP http_requests_total Total number of requests by method, status and handler.
-# TYPE http_requests_total counter
 http_requests_total{handler="/health",method="GET",status="2xx"} 42.0
 ```
 
-Prometheus scrapes these metrics every **15 seconds** and Grafana is **auto-provisioned** with Prometheus as the default datasource — no manual setup required.
-
 ---
 
-### ⚡ Zero-Downtime Blue-Green Deployments
+### Zero-Downtime Blue-Green Deployments
 
-The stack runs **two application containers** side-by-side. Only one serves traffic at any time:
+The stack runs two app containers side by side (blue and green). Only one handles traffic at a time. When you deploy, the script builds the inactive one, waits for it to pass health checks, swaps NGINX's upstream, reloads NGINX gracefully, and stops the old container. No dropped requests.
 
 ```
 ┌─────────────┐          ┌─────────────────┐
-│   NGINX     │──────────│  🔵 App Blue    │  ← Currently serving traffic
-│  (upstream) │          │    (healthy)     │
+│   NGINX     │──────────│  App Blue       │  ← serving traffic
+│  (upstream) │          │  (healthy)      │
 └─────────────┘          ├─────────────────┤
-                         │  🟢 App Green   │  ← Idle / being rebuilt
-                         │    (standby)    │
+                         │  App Green      │  ← idle / rebuilding
+                         │  (standby)      │
                          └─────────────────┘
 ```
 
-**Deployment flow** (`scripts/zero_downtime_deploy.sh`):
+How the deploy script works:-
 
-1. 🔨 **Build** the inactive slot with the latest code
-2. 🏥 **Health-poll** the new container until `/health` returns `healthy`
-3. 🔀 **Swap** NGINX upstream to point at the new container
-4. 🔄 **Reload** NGINX gracefully (`nginx -s reload`) — no dropped connections
-5. 🛑 **Stop** the old container
+1. Detect which slot is currently active
+2. Build and start the other slot
+3. Poll `/health` until the new container reports healthy
+4. Update `nginx/upstream.conf` to point at the new slot
+5. Reload NGINX (`nginx -s reload`)
+6. Stop the old container
 
 ```bash
-# Deploy with zero downtime
 sudo ./scripts/zero_downtime_deploy.sh
 ```
 
 ---
 
-### 🔒 Security Hardening
+### Security
+
+I tried to cover the basics that I'd actually do on a real VPS. Nothing fancy, just solid defaults.
 
 #### Firewall (UFW)
+
+The script locks down the server to only what's needed:-
+
 ```bash
 sudo ./scripts/setup_firewall.sh
 ```
-- Denies all incoming traffic by default
-- Opens only ports **22** (SSH), **80** (HTTP), **443** (HTTPS)
-- Blocks external access to Prometheus (9090) and Grafana (3000)
+
+What it does:-
+- Sets default policy to **deny all incoming**
+- Allows only **SSH (22)**, **HTTP (80)**, **HTTPS (443)**
+- Explicitly blocks external access to Prometheus and Grafana ports
+- Keeps outgoing traffic open so the server can still pull images, updates, etc.
 
 #### Fail2ban
+
+Handles the brute-force stuff automatically:-
+
 ```bash
 sudo ./scripts/setup_fail2ban.sh
 ```
-- Protects SSH against brute-force attacks (5 retries → 1 hour ban)
-- Monitors NGINX logs for malicious bot patterns
-- Auto-bans IPs with excessive failed HTTP requests
 
-#### NGINX Security Headers
-The production NGINX config includes:
-- `Strict-Transport-Security` (HSTS) — force HTTPS
-- `X-Frame-Options: DENY` — prevent clickjacking
-- `X-Content-Type-Options: nosniff` — prevent MIME sniffing
-- `Referrer-Policy: no-referrer` — privacy protection
-- TLS 1.2/1.3 only with strong cipher suites
+What it does:-
+- **SSH jail** :- 5 failed login attempts within 10 minutes = banned for 1 hour
+- **NGINX HTTP auth jail** :- watches for repeated auth failures in NGINX error logs, bans after 3 attempts
+- **NGINX bot search jail** :- catches bots scanning for common exploit paths (wp-admin, phpmyadmin, etc.), bans after 5 hits for 24 hours
+
+All jails log to syslog so you can check `fail2ban-client status` anytime to see what's been blocked.
+
+#### NGINX Hardening
+
+The production NGINX config (`nginx/prod.conf`) has these headers baked in:-
+
+| Header | What it does |
+|:---|:---|
+| `Strict-Transport-Security` | Forces browsers to use HTTPS for 2 years, including subdomains |
+| `X-Frame-Options: DENY` | Blocks the site from being loaded in iframes (clickjacking protection) |
+| `X-Content-Type-Options: nosniff` | Prevents browsers from MIME-sniffing responses |
+| `Referrer-Policy: no-referrer` | Stops the browser from sending referrer info to other sites |
+
+TLS is configured to only allow **TLS 1.2 and 1.3** with strong ciphers. No legacy SSL nonsense.
+
+#### What I'd also recommend
+
+These aren't automated in the scripts but worth doing on any real server:-
+- Create a non-root SSH user and disable password login
+- Set up SSH key-only authentication
+- Run containers as non-root where possible
+- Rotate secrets/passwords periodically
 
 ---
 
-### ☁️ Cloudflare Integration
+### Cloudflare Integration
 
-When your app is behind Cloudflare, NGINX sees Cloudflare's IP instead of the real client IP. We fix that:
+If you're running behind Cloudflare, NGINX will see Cloudflare's IP instead of your actual visitors. This script pulls the latest Cloudflare IP ranges and generates an NGINX config that restores the real client IP using the `CF-Connecting-IP` header:-
 
 ```bash
-# Fetch latest Cloudflare IP ranges and generate NGINX config
 python scripts/cloudflare_ips.py
 ```
 
-This generates `nginx/cloudflare.conf` which tells NGINX to:
-- Trust Cloudflare's IPv4 and IPv6 ranges
-- Use `CF-Connecting-IP` header to restore the real client IP
-- Log actual visitor IPs instead of Cloudflare proxy IPs
+The generated `nginx/cloudflare.conf` gets included in the NGINX server block automatically.
 
 ---
 
-### 💾 Automated Backups
+### Automated Backups
 
-#### Manual Backup & Restore
 ```bash
-# Create a backup
+# manual backup
 ./scripts/backup.sh
-# → Backup written to /backups/appdb_20260602020000.sql.gz
 
-# Restore from backup
+# manual restore
 ./scripts/restore.sh /backups/appdb_20260602020000.sql.gz
-```
 
-#### Scheduled Nightly Backups
-```bash
+# set up nightly cron (runs at 2am, keeps last 7 days)
 sudo ./scripts/setup_backup_cron.sh
 ```
-- Installs a cron job running **nightly at 2:00 AM**
-- Creates gzip-compressed PostgreSQL dumps
-- **Auto-prunes** backups older than 7 days to prevent disk exhaustion
+
+The backup script dumps Postgres, gzips it, and cleans up anything older than 7 days so you don't fill up the disk.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-Project_1/
+.
 ├── app/
-│   ├── main.py                    # FastAPI application with health checks & metrics
-│   └── requirements.txt           # Python dependencies
+│   ├── main.py                    # FastAPI app with health checks and metrics
+│   └── requirements.txt           # Python deps
 │
 ├── nginx/
-│   ├── dev.conf                   # NGINX config for local development
-│   ├── prod.conf                  # NGINX config with TLS, HSTS & security headers
-│   ├── upstream.conf              # Dynamic upstream for Blue-Green switching
-│   └── cloudflare.conf            # Auto-generated Cloudflare real-IP restoration
+│   ├── dev.conf                   # NGINX config for local dev
+│   ├── prod.conf                  # NGINX config with TLS + security headers
+│   ├── upstream.conf              # dynamic upstream for blue-green switching
+│   └── cloudflare.conf            # auto-generated cloudflare real-IP config
 │
 ├── prometheus/
-│   └── prometheus.yml             # Prometheus scrape configuration
+│   └── prometheus.yml             # scrape config
 │
-├── grafana/
-│   └── provisioning/
-│       └── datasources/
-│           └── datasource.yml     # Auto-provision Prometheus in Grafana
+├── grafana/provisioning/
+│   └── datasources/
+│       └── datasource.yml         # auto-provisions Prometheus in Grafana
 │
 ├── scripts/
-│   ├── zero_downtime_deploy.sh    # Blue-Green zero-downtime deployment
-│   ├── setup_firewall.sh          # UFW firewall hardening
-│   ├── setup_fail2ban.sh          # Fail2ban brute-force protection
-│   ├── cloudflare_ips.sh          # Cloudflare IP range fetcher (shell)
-│   ├── cloudflare_ips.py          # Cloudflare IP range fetcher (Python)
-│   ├── backup.sh                  # PostgreSQL backup with 7-day retention
-│   ├── restore.sh                 # PostgreSQL restore from backup
-│   └── setup_backup_cron.sh       # Install nightly backup cron job
+│   ├── zero_downtime_deploy.sh    # blue-green deploy script
+│   ├── setup_firewall.sh          # UFW setup
+│   ├── setup_fail2ban.sh          # fail2ban setup
+│   ├── cloudflare_ips.py          # fetch cloudflare IP ranges
+│   ├── backup.sh                  # pg_dump + gzip + rotation
+│   ├── restore.sh                 # restore from backup
+│   └── setup_backup_cron.sh       # install nightly cron
 │
-├── docs/
-│   ├── architecture.md            # System architecture diagram
-│   ├── deployment.md              # Full deployment guide
-│   ├── security.md                # Security hardening checklist
-│   ├── monitoring.md              # Monitoring setup options
-│   ├── backup.md                  # Backup & restore strategy
-│   └── logging.md                 # Logging configuration
-│
-├── .github/
-│   └── workflows/
-│       └── deploy.yml             # GitHub Actions CI/CD pipeline
-│
-├── docker-compose.yml             # Development stack (with monitoring)
-├── docker-compose.prod.yml        # Production stack (with TLS & certs)
-├── Dockerfile                     # Python 3.11 slim container
-├── .env.example                   # Environment variable template
-└── .dockerignore                  # Docker build exclusions
+├── docs/                          # detailed docs for each topic
+├── .github/workflows/deploy.yml   # CI/CD pipeline
+├── docker-compose.yml             # dev stack
+├── docker-compose.prod.yml        # prod stack with TLS
+├── Dockerfile                     # Python 3.11 slim
+└── .env.example                   # env template
 ```
 
 ---
 
-## 🚢 Deployment
+## Deployment
 
-### Production (Linux VPS)
+Full guide:- [docs/deployment.md](docs/deployment.md)
 
-Full deployment guide: [docs/deployment.md](docs/deployment.md)
+Short version:-
 
 ```bash
-# 1. Set up SSL (Let's Encrypt)
+# get SSL cert
 sudo certbot certonly --standalone -d your-domain.com
 sudo cp /etc/letsencrypt/live/your-domain.com/*.pem nginx/certs/
 
-# 2. Configure environment
+# configure
 cp .env.example .env
-# Edit .env → set APP_ENV=production
+# edit .env, set APP_ENV=production
 
-# 3. Launch production stack
+# launch
 docker compose -f docker-compose.prod.yml up -d --build
 
-# 4. Verify
+# verify
 curl -k https://your-domain.com/health
 ```
 
-### GitHub Actions (Automated)
+### CI/CD with GitHub Actions
 
-Push to `main` → automatically deploys to your server via SSH.
+Push to `main` and it auto-deploys via SSH. You need these secrets in your GitHub repo:-
 
-Required GitHub Secrets:
-
-| Secret | Description |
+| Secret | What to put |
 |:---|:---|
-| `SSH_HOST` | Your server's IP or hostname |
+| `SSH_HOST` | server IP or hostname |
 | `SSH_USER` | SSH username |
-| `SSH_KEY` | Private SSH key for authentication |
+| `SSH_KEY` | private SSH key |
 
 ---
 
-## 📚 Documentation
+## Docs
 
-| Document | Description |
+| Doc | What's in it |
 |:---|:---|
-| 📐 [Architecture](docs/architecture.md) | System design diagram |
-| 🚢 [Deployment](docs/deployment.md) | Step-by-step production deployment |
-| 🔒 [Security](docs/security.md) | Firewall, fail2ban, and TLS hardening |
-| 📊 [Monitoring](docs/monitoring.md) | Prometheus & Grafana setup guide |
-| 💾 [Backup](docs/backup.md) | Backup strategy and restore procedures |
-| 📝 [Logging](docs/logging.md) | Log levels and troubleshooting |
+| [architecture.md](docs/architecture.md) | system diagram |
+| [deployment.md](docs/deployment.md) | full deployment walkthrough |
+| [security.md](docs/security.md) | firewall, fail2ban, TLS notes |
+| [monitoring.md](docs/monitoring.md) | Prometheus and Grafana options |
+| [backup.md](docs/backup.md) | backup and restore strategy |
+| [logging.md](docs/logging.md) | log config and troubleshooting |
 
 ---
 
-## 🛠️ Environment Variables
+## Environment Variables
 
-| Variable | Default | Description |
+| Variable | Default | What it does |
 |:---|:---|:---|
-| `APP_ENV` | `local` | Environment name (`local`, `production`) |
-| `LOG_LEVEL` | `INFO` | Python log level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
-| `DATABASE_URL` | `postgresql://appuser:apppass@db:5432/appdb` | PostgreSQL connection string |
+| `APP_ENV` | `local` | `local` or `production` |
+| `LOG_LEVEL` | `INFO` | Python log level |
+| `DATABASE_URL` | `postgresql://appuser:apppass@db:5432/appdb` | Postgres connection string |
 | `REDIS_URL` | `redis://redis:6379/0` | Redis connection string |
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-<p align="center">
-  Built with ❤️ using FastAPI, Docker, and good engineering practices.
-</p>
+1. Fork the repo
+2. Create a branch (`git checkout -b feature/something`)
+3. Commit your changes
+4. Push and open a PR
