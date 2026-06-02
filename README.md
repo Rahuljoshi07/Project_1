@@ -258,10 +258,6 @@ docker compose -f docker-compose.prod.yml up -d --build
 curl -k https://your-domain.com/health
 ```
 
-> 📸 **Screenshot:- Production health check response from your domain**
->
-> ![Production health check](docs/images/prod-health.png)
-
 ### CI/CD with GitHub Actions
 
 Push to `main` and it auto-deploys via SSH. Set these secrets in your GitHub repo:-
